@@ -94,7 +94,7 @@ void MainWindow::OnCreate(HWND hwnd) {
     keyboardPiano.reset(new KeyboardPiano());
     keyboardPiano->start();
     manager.reset(new SoundManager(hwnd, 300, 50));
-    bpmController.reset(new BPMController(50, 30, hwnd));
+    bpmController.reset(new BPMController(hwnd, 50, 30));
     channelRack.reset(new ChannelRack(hwnd, 450, 50));
     buttonStart.reset(Button::createSimple(L"Start", 50, 150, BTNSTART, hwnd));
     buttonStop.reset(Button::createSimple(L"Stop", 50, 200, BTNSTOP, hwnd));

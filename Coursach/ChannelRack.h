@@ -63,7 +63,6 @@ private:
 
 
     vector<vector<unique_ptr<Button>>> buttons;
-    /*PatternController patternController;*/
 
     int startId{ CHANNEL_RACK_START_ID };
     int lastId{ CHANNEL_RACK_START_ID };

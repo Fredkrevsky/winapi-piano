@@ -67,13 +67,13 @@ void PianoRoll::OnLButtonDown(HWND hwnd, WPARAM wParam, LPARAM lParam) {
     int localY = mouseY - y - 50;
 
     int gridX = localX / CELL_WIDTH;
-    int gridY = localY / CELL_HEIGHT;
+    int gridY = ROWS - 1 - localY / CELL_HEIGHT;
 
     if (gridX >= 0 && gridX < COLS && gridY >= 0 && gridY < ROWS) {
         AddNoteAt(gridX, gridY);
     }
 
-    RECT rect = { mouseX - CELL_WIDTH * noteDuration, mouseY - CELL_HEIGHT, mouseX + CELL_WIDTH * noteDuration, mouseY + CELL_HEIGHT};
+    RECT rect = { mouseX - CELL_WIDTH * 16, mouseY - CELL_HEIGHT, mouseX + CELL_WIDTH * 16, mouseY + CELL_HEIGHT};
 
     InvalidateRect(hwnd, &rect, TRUE);
 }
@@ -86,13 +86,13 @@ void PianoRoll::OnRButtonDown(HWND hwnd, WPARAM wParam, LPARAM lParam) {
     int localY = mouseY - y - 50;
 
     int gridX = localX / CELL_WIDTH;
-    int gridY = localY / CELL_HEIGHT;
+    int gridY = ROWS - 1 - localY / CELL_HEIGHT;
 
     if (gridX >= 0 && gridX < COLS && gridY >= 0 && gridY < ROWS) {
         RemoveNoteAt(gridX, gridY);
     }
 
-    RECT rect = { mouseX - CELL_WIDTH * noteDuration, mouseY - CELL_HEIGHT, mouseX + CELL_WIDTH * noteDuration, mouseY + CELL_HEIGHT };
+    RECT rect = { mouseX - CELL_WIDTH * 16, mouseY - CELL_HEIGHT, mouseX + CELL_WIDTH * 16, mouseY + CELL_HEIGHT };
 
     InvalidateRect(hwnd, &rect, TRUE);
 }
@@ -161,9 +161,9 @@ void PianoRoll::DrawNotes(HDC hdc) {
     for (const Note& note : notes) {
         RECT noteRect = {
             x + GRID_LEFT + note.x * CELL_WIDTH,
-            y + 50 + note.y * CELL_HEIGHT,
+            y + 50 + (ROWS - note.y) * CELL_HEIGHT,
             x + GRID_LEFT + (note.x + note.length) * CELL_WIDTH,
-            y + 50 + (note.y + 1) * CELL_HEIGHT
+            y + 50 + (ROWS - note.y - 1) * CELL_HEIGHT
         };
 
         Rectangle(hdc, noteRect.left, noteRect.top, noteRect.right, noteRect.bottom);

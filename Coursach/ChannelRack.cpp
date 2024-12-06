@@ -120,7 +120,7 @@ ChannelRack::~ChannelRack() { }
 
 bool ChannelRack::isClicked(WPARAM wParam, LPARAM lParam) {
     int id = static_cast<int>(wParam);
-    return id >= CHANNEL_RACK_START_ID && id <= CHANNEL_RACK_END_ID/* || patternController.isClicked(wParam, lParam)*/;
+    return id >= CHANNEL_RACK_START_ID && id <= CHANNEL_RACK_END_ID;
 }
 
 void ChannelRack::toggleButton(int track, int step) {
@@ -129,21 +129,14 @@ void ChannelRack::toggleButton(int track, int step) {
 }
 
 void ChannelRack::onClick(HWND hwnd, WPARAM wParam, LPARAM lParam) {
-    /*if (patternController.isClicked(wParam, lParam)) {
-        patternController.setState(std::move(buttonStates));
-        patternController.onClick();
-        buttonStates = patternController.getState();
+    int btnId = static_cast<int>(wParam);
+    auto [row, col] = getRowCol(btnId);
+    if (col < 32) {
+        toggleButton(row, col);
     }
-    else {*/
-        int btnId = static_cast<int>(wParam);
-        auto [row, col] = getRowCol(btnId);
-        if (col < 32) {
-            toggleButton(row, col);
-        }
-        else {
-            fillStatus(row, 1 << (col - 32));
-        }
-    //}
+    else {
+        fillStatus(row, 1 << (col - 32));
+    }
     auto [x, y, w, h] = getCoord(wParam);
     RECT rect = { x - 10, y - 10, x + w + 10, y + h + 10 };
     InvalidateRect(hwnd, &rect, TRUE);

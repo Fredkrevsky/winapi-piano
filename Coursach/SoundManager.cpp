@@ -30,7 +30,6 @@ void SoundManager::loadDefaultSounds() {
             string note(notes[i]);
             wstring path = DEFAULT_PIANO_PATH + wstring(note.begin(), note.end()) + to_wstring(t + 1) + L".wav";
             piano[t][i].loadFromWav(path.c_str());
-            piano[t][i].limiter(0.1f);
         }
     }
 
@@ -45,8 +44,8 @@ void SoundManager::loadDefaultSounds() {
         WavSound sound;
         wstring wpath(path.begin(), path.end());
         sound.loadFromWav(wpath);
-        loadedSamples.emplace_back(sound);
-        wstring name = getFileName(wpath);
+        loadedSamples.emplace_back(std::move(sound));
+        wstring name = WavSound::getFileName(wpath);
         sampleButtons[i]->setText(name);
         i++;
     });
@@ -59,12 +58,10 @@ bool SoundManager::isClicked(WPARAM wParam, LPARAM lParam) {
 
 void SoundManager::onClick(HWND hwnd, WPARAM wParam, LPARAM lParam) {
     int index = static_cast<int>(wParam) - SOUND_MANAGER_START_ID;
-    wstring path = openFileDialog(hwnd);
-    if (!fileExists(path)) {
-        throw std::exception("Incorrect file path");
-    }
-    wstring name = getFileName(path);
+    wstring path = WavSound::openFileDialog(hwnd);
     loadedSamples[index].loadFromWav(path);
+
+    wstring name = WavSound::getFileName(path);
     sampleButtons[index]->setText(name);
 }
 
@@ -77,7 +74,6 @@ void SoundManager::master(vector<vector<bool>>& drumData, vector<Note> pianoData
 
     for (size_t index = 0; index < 4; ++index) {
         auto& sample = loadedSamples[index];
-        sample.limiter(0.1f);
 
         vector<bool>& vec = drumData[index];
         WavSound curr;
@@ -89,6 +85,14 @@ void SoundManager::master(vector<vector<bool>>& drumData, vector<Note> pianoData
         }
         masterSound.addToBuffer(curr, 0);
     }
+
+    for (const auto& elem : pianoData) {
+        int start = elem.x * rate * 30 / bpm;
+        int duration = elem.length * rate * 30 / bpm;
+        int note = elem.y + 24;
+        auto& sample = piano[note / 12][note % 12];
+        masterSound.addToBuffer(sample, start, duration);
+    }
 }
 
 void SoundManager::setBpm(const int _bpm) {
@@ -96,21 +100,10 @@ void SoundManager::setBpm(const int _bpm) {
 }
 
 void SoundManager::play() {
-    WAVHEADER header;
+    masterSound.saveToFile(L"output.wav");
 
-    header.subchunk2Size = masterSound.getSize() * 2;
-    header.chunkSize = 36 + header.subchunk2Size;
-
-    int wavSize = sizeof(WAVHEADER) + header.subchunk2Size;
-    wavData.reset( new char[wavSize] );
-
-    memcpy(wavData.get(), &header, sizeof(WAVHEADER));
-    memcpy(wavData.get() + sizeof(WAVHEADER), masterSound.data(), header.subchunk2Size);
-
-    SaveWavToFile("output.wav", wavData.get(), wavSize);
-
-    PlaySound(reinterpret_cast<LPCWSTR>(wavData.get()),
-        NULL, SND_MEMORY | SND_ASYNC | SND_LOOP);
+    PlaySound(L"output.wav",
+        NULL, SND_FILENAME | SND_ASYNC | SND_LOOP);
 }
 
 void SoundManager::stop() {

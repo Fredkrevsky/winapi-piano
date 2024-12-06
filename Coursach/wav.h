@@ -33,21 +33,21 @@ public:
     WavSound();
     void setSize(int size);
     void addToBuffer(const WavSound& sound, int start);
+    void addToBuffer(const WavSound& sound, int start, int duration);
     void loadFromWav(const wstring& path);
     int getSize() const;
-    const short* data() const;
-    void limiter(float velocity);
+    const int* data() const;
+    void saveToFile(const std::wstring& path);
+
+    static wstring openFileDialog(HWND hWnd);
+    static wstring getFileName(const wstring& path);
+    static bool fileExists(const wstring& path);
 
 private:
     int size{};
-    vector<short> buffer{};
+    vector<int> buffer{};
+    vector<short> wavData{};
+
     bool checkWav(const WAVHEADER& header);
+    void master();
 };
-
-bool SaveWavToFile(const std::string& filename, const void* wavData, size_t wavSize);
-
-std::wstring openFileDialog(HWND hWnd);
-
-bool fileExists(wstring& path);
-
-wstring getFileName(wstring& path);

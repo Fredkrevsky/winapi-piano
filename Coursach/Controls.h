@@ -44,7 +44,7 @@ private:
 
 class BPMController {
 public:
-    BPMController(int x, int y, HWND parent) {
+    BPMController(HWND parent, int x, int y) {
         hLabel = CreateWindow(
             L"STATIC", L"BPM:",
             WS_VISIBLE | WS_CHILD,
@@ -60,12 +60,14 @@ public:
 
         SendMessage(hEdit, EM_SETLIMITTEXT, 3, 0);
     }
-    static BPMController* create(int x, int y, HWND parent) {
-        return new BPMController(x, y, parent);
+    static BPMController* create(HWND parent, int x, int y) {
+        return new BPMController(parent, x, y);
     }
     int getValue() {
-        wchar_t buffer[16];
-        GetWindowText(hEdit, buffer, sizeof(buffer));
+        wchar_t buffer[16] = {};
+        const size_t bufferSize = sizeof(buffer) / sizeof(buffer[0]);
+        GetWindowText(hEdit, buffer, bufferSize - 1);
+
         if (buffer[0] == '\0') {
             throw std::invalid_argument("You must choose the tempo");
         }

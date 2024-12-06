@@ -15,6 +15,12 @@ bool WavSound::checkWav(const WAVHEADER& header) {
 }
 
 void WavSound::loadFromWav(const wstring& path) {
+
+    if (!fileExists(path)) {
+        throw std::exception("Incorrect file path");
+    }
+    wstring name = getFileName(path);
+
     size = 0;
     WAVHEADER wavHeader;
     FILE* wavFile;
@@ -28,31 +34,25 @@ void WavSound::loadFromWav(const wstring& path) {
 
     if (int bytesRead = fread(&wavHeader, 1, sizeof(WAVHEADER), wavFile))
     {
-        if (!checkWav(wavHeader)) return;
+        if (!checkWav(wavHeader)) {
+            fclose(wavFile);
+            return;
+        }
         int newSize = wavHeader.chunkSize / 2;
         size = newSize;
-        buffer.resize(newSize);
-        size = fread(buffer.data(), 2, size, wavFile);
+
+        vector<short> shortBuffer(newSize);
+        size = fread(shortBuffer.data(), sizeof(short), size, wavFile);
+        shortBuffer.resize(size);
+
+        buffer.assign(shortBuffer.begin(), shortBuffer.end());
     }
     fclose(wavFile);
 }
 
-void WavSound::limiter(float limit) {
-    auto [f, s] = minmax_element(buffer.begin(), buffer.end());
-    short mn = *f, mx = *s;
-    if (mn == 0 && mx == 0) return;
-    float k = SHRT_MAX * limit / max(abs(mn), abs(mx));
-    if (k < 1) {
-        std::ranges::for_each(buffer, [=](auto& elem) {
-            return static_cast<short>(elem * k);
-            });
-    }
-}
-
-const short* WavSound::data() const {
+const int* WavSound::data() const {
     return buffer.data();
 }
-
 
 void WavSound::setSize(int _size) {
     buffer.clear();
@@ -65,25 +65,65 @@ int WavSound::getSize() const {
 }
 
 void WavSound::addToBuffer(const WavSound& sound, int start) {
-    int count = min(sound.getSize(), size - start);
+    int count = min(sound.getSize(), size - start) - 200;
     auto src = sound.data();
     auto dest = std::next(buffer.begin(), start);
-    auto destend = std::next(dest, count - 200);
+    auto destend = std::next(dest, count);
 
-    for (int i = 0; i < count - 200; ++i, ++dest) {
-        int val = src[i] + *dest;
-        *dest = max(min(val, SHRT_MAX), SHRT_MIN);
+    for (int i = 0; i < count; ++i, ++dest) {
+        *dest += src[i];
     }
 }
 
-bool SaveWavToFile(const std::string& filename, const void* wavData, size_t wavSize) {
-    std::ofstream outFile(filename, std::ios::binary);
-    outFile.write(reinterpret_cast<const char*>(wavData), wavSize);
-    outFile.close();
-    return TRUE;
+void WavSound::addToBuffer(const WavSound& sound, int start, int duration) {
+    int count = min({ sound.getSize(), size - start, duration}) - 600;
+    auto src = sound.data();
+    auto dest = std::next(buffer.begin(), start);
+    auto destend = std::next(dest, count);
+
+    int DECAY = min(2000, count);
+
+    for (int i = 0; i < count - DECAY; ++i, ++dest) {
+        *dest += src[i];
+    }
+    for (int i = count - DECAY; i < count; ++i, ++dest) {
+        int prev = src[i];
+        float k = (count - i) / DECAY;
+        int val = static_cast<int>(prev * k);
+        *dest += val;
+    }
 }
 
-std::wstring openFileDialog(HWND hWnd) {
+void WavSound::master() {
+    float volume = 0.8f;
+
+    auto [f, s] = minmax_element(buffer.begin(), buffer.end());
+    int mn = *f, mx = *s;
+
+    if (mn == 0 && mx == 0) return;
+    float k = SHRT_MAX * volume / max(abs(mn), abs(mx));
+
+    wavData.clear();
+    std::transform(buffer.begin(), buffer.end(), back_inserter(wavData), [=](const auto& elem) {
+        return elem * k;
+    });
+}
+
+void WavSound::saveToFile(const wstring& filename) {
+    master();
+
+    WAVHEADER header;
+
+    header.subchunk2Size = size * sizeof(short);
+    header.chunkSize = 36 + header.subchunk2Size;
+
+    std::ofstream outFile(filename, std::ios::binary);
+    outFile.write(reinterpret_cast<const char*>(&header), sizeof(WAVHEADER));
+    outFile.write(reinterpret_cast<const char*>(wavData.data()), header.subchunk2Size);
+    outFile.close();
+}
+
+wstring WavSound::openFileDialog(HWND hWnd) {
     OPENFILENAME ofn;
     wchar_t szFile[260] = { 0 };
 
@@ -105,20 +145,20 @@ std::wstring openFileDialog(HWND hWnd) {
     return L"";
 }
 
-bool fileExists(wstring& path) {
+bool WavSound::fileExists(const wstring& path) {
     DWORD fileAttr = GetFileAttributesW(path.c_str());
     return (fileAttr != INVALID_FILE_ATTRIBUTES && !(fileAttr & FILE_ATTRIBUTE_DIRECTORY));
 }
 
-wstring getFileName(wstring& path)
+wstring WavSound::getFileName(const wstring& path)
 {
     size_t lastSlashPos = path.find_last_of(L"\\/");
-    std::wstring fileName = (lastSlashPos == std::wstring::npos) 
+    wstring fileName = (lastSlashPos == wstring::npos) 
         ? path 
         : path.substr(lastSlashPos + 1);
 
     size_t lastDotPos = fileName.find_last_of(L'.');
-    if (lastDotPos != std::wstring::npos) {
+    if (lastDotPos != wstring::npos) {
         fileName = fileName.substr(0, lastDotPos);
     }
 
