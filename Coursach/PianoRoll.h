@@ -2,8 +2,11 @@
 #define NOMINMAX
 #include <windows.h>
 #include <vector>
+#include <array>
+#include <memory>
+#include "Controls.h"
 
-using std::vector;
+using std::vector, std::array;
 
 struct Note {
     int x, y;
@@ -34,13 +37,8 @@ private:
     bool IsBlackKey(int midiNote);
 
     vector<Note> notes;
-    int noteDuration = 4;
-
-    HWND btnWholeNote{ nullptr };
-    HWND btnHalfNote{ nullptr };
-    HWND btnQuarterNote{ nullptr };
-    HWND btnEighthNote{ nullptr };
-    HWND btnSixteenthNote{ nullptr };
+    array<std::unique_ptr<Button>, 5> durationButtons;
+    int currentDuration = 4;
 
     const int CELL_WIDTH = 30;
     const int CELL_HEIGHT = 15;
@@ -61,6 +59,6 @@ private:
     const int BUTTON_HEIGHT = 40;
     const int BUTTON_WIDTH = 150;
     const int BUTTON_PADDING = 20;
-    const int x = 0;
-    const int y = 0;
+    const int x;
+    const int y;
 };

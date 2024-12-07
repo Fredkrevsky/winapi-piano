@@ -1,9 +1,28 @@
 #include "PianoRoll.h"
+#include <algorithm>
+
+#define BTN_DURATION 205
 
 PianoRoll::PianoRoll(HWND hwnd, int _x, int _y) : x(_x), y(_y){
-    int yPos = 50 + ROWS * CELL_HEIGHT + 20;
+    const int yPos = 50 + ROWS * CELL_HEIGHT + 20;
 
-    btnWholeNote = CreateWindow(L"BUTTON", L"Whole Note", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
+    const array<LPCWSTR, 5> btnNames = { {
+        L"Whole note",
+        L"Half note",
+        L"Quarter Note",
+        L"Eighth Note",
+        L"Sixteenth Note"
+    } };
+
+    std::ranges::for_each(durationButtons, [=, nameIndex=0, dx=50](auto& button) mutable {
+        const LPCWSTR name = btnNames[nameIndex];
+        const int btnId = BTN_DURATION + nameIndex;
+        button.reset(Button::createSimple(name, x + dx, y + yPos, btnId, hwnd));
+        nameIndex++;
+        dx += 200;
+    });
+
+    /*btnWholeNote = CreateWindow(L"BUTTON", L"Whole Note", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
         x + 50, y + yPos, BUTTON_WIDTH, BUTTON_HEIGHT, hwnd, NULL,
         (HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE), NULL);
 
@@ -21,7 +40,7 @@ PianoRoll::PianoRoll(HWND hwnd, int _x, int _y) : x(_x), y(_y){
 
     btnSixteenthNote = CreateWindow(L"BUTTON", L"Sixteenth Note", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
         x + 850, y + yPos, BUTTON_WIDTH, BUTTON_HEIGHT, hwnd, NULL,
-        (HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE), NULL);
+        (HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE), NULL);*/
 }
 
 vector<Note> PianoRoll::getData() {
@@ -29,70 +48,65 @@ vector<Note> PianoRoll::getData() {
 }
 
 bool PianoRoll::isClicked(HWND hwnd, WPARAM wParam, LPARAM lParam) {
-    int posx = LOWORD(lParam);
-    int posy = HIWORD(lParam);
+    const int posx = LOWORD(lParam);
+    const int posy = HIWORD(lParam);
 
-    int localX = posx - x - GRID_LEFT;
-    int localY = posy - y - 50;
+    const int localX = posx - x - GRID_LEFT;
+    const int localY = posy - y - 50;
 
-    int gridX = localX / CELL_WIDTH;
-    int gridY = localY / CELL_HEIGHT;
+    const int gridX = localX / CELL_WIDTH;
+    const int gridY = localY / CELL_HEIGHT;
 
-    return gridX >= 0 && gridX < COLS && gridY >= 0 && gridY < ROWS;
+    if (gridX >= 0 && gridX < COLS && gridY >= 0 && gridY < ROWS) {
+        return true;
+    }
+
+    const int btnId = static_cast<int>(wParam);
+
+    return (btnId >= BTN_DURATION) && (btnId <= BTN_DURATION + 4);
 }
 
 void PianoRoll::OnCommand(HWND hwnd, WPARAM wParam, LPARAM lParam) {
-    if ((HWND)lParam == btnWholeNote) {
-        noteDuration = 16;
-    }
-    else if ((HWND)lParam == btnHalfNote) {
-        noteDuration = 8;
-    }
-    else if ((HWND)lParam == btnQuarterNote) {
-        noteDuration = 4;
-    }
-    else if ((HWND)lParam == btnEighthNote) {
-        noteDuration = 2;
-    }
-    else if ((HWND)lParam == btnSixteenthNote) {
-        noteDuration = 1;
-    }
+    const int btnId = static_cast<int>(wParam);
+    const int index = btnId - BTN_DURATION;
+    static const array<int, 5> durations = { {16, 8, 4, 2, 1} };
+    currentDuration = durations[index];
 }
 
 void PianoRoll::OnLButtonDown(HWND hwnd, WPARAM wParam, LPARAM lParam) {
-    int mouseX = LOWORD(lParam);
-    int mouseY = HIWORD(lParam);
+    const int mouseX = LOWORD(lParam);
+    const int mouseY = HIWORD(lParam);
 
-    int localX = mouseX - x - GRID_LEFT;
-    int localY = mouseY - y - 50;
+    const int localX = mouseX - x - GRID_LEFT;
+    const int localY = mouseY - y - 50;
 
-    int gridX = localX / CELL_WIDTH;
-    int gridY = ROWS - 1 - localY / CELL_HEIGHT;
+    const int gridX = localX / CELL_WIDTH;
+    const int gridY = ROWS - 1 - localY / CELL_HEIGHT;
 
     if (gridX >= 0 && gridX < COLS && gridY >= 0 && gridY < ROWS) {
         AddNoteAt(gridX, gridY);
     }
 
-    RECT rect = { mouseX - CELL_WIDTH * 16, mouseY - CELL_HEIGHT, mouseX + CELL_WIDTH * 16, mouseY + CELL_HEIGHT};
+    const RECT rect = { mouseX - CELL_WIDTH * 16, mouseY - CELL_HEIGHT, mouseX + CELL_WIDTH * 16, mouseY + CELL_HEIGHT};
 
     InvalidateRect(hwnd, &rect, TRUE);
 }
 
 void PianoRoll::OnRButtonDown(HWND hwnd, WPARAM wParam, LPARAM lParam) {
-    int mouseX = LOWORD(lParam);
-    int mouseY = HIWORD(lParam);
+    const int mouseX = LOWORD(lParam);
+    const int mouseY = HIWORD(lParam);
 
-    int localX = mouseX - x - GRID_LEFT;
-    int localY = mouseY - y - 50;
+    const int localX = mouseX - x - GRID_LEFT;
+    const int localY = mouseY - y - 50;
 
-    int gridX = localX / CELL_WIDTH;
-    int gridY = ROWS - 1 - localY / CELL_HEIGHT;
+    const int gridX = localX / CELL_WIDTH;
+    const int gridY = ROWS - 1 - localY / CELL_HEIGHT;
 
     if (gridX >= 0 && gridX < COLS && gridY >= 0 && gridY < ROWS) {
         RemoveNoteAt(gridX, gridY);
     }
 
-    RECT rect = { mouseX - CELL_WIDTH * 16, mouseY - CELL_HEIGHT, mouseX + CELL_WIDTH * 16, mouseY + CELL_HEIGHT };
+    const RECT rect = { mouseX - CELL_WIDTH * 16, mouseY - CELL_HEIGHT, mouseX + CELL_WIDTH * 16, mouseY + CELL_HEIGHT };
 
     InvalidateRect(hwnd, &rect, TRUE);
 }
@@ -176,9 +190,9 @@ void PianoRoll::DrawNotes(HDC hdc) {
 void PianoRoll::AddNoteAt(int x, int y) {
     if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return;
 
-    int maxLength = std::min(noteDuration, COLS - x);
+    const int maxLength = std::min(currentDuration, COLS - x);
 
-    auto it = std::find_if(notes.begin(), notes.end(), [x, y](const Note& note) {
+    const auto it = std::find_if(notes.begin(), notes.end(), [x, y](const Note& note) {
         return note.y == y && x >= note.x && x < note.x + note.length;
         });
 

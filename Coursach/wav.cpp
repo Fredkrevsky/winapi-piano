@@ -17,30 +17,26 @@ void WavSound::loadFromWav(const wstring& path) {
     if (!fileExists(path)) {
         throw std::exception("Incorrect file path");
     }
-    wstring name = getFileName(path);
+    const wstring name = getFileName(path);
 
     size = 0;
     WAVHEADER wavHeader;
     FILE* wavFile;
 
-    string pathStr(path.begin(), path.end());
-
+    const string pathStr(path.begin(), path.end());
     fopen_s(&wavFile, pathStr.c_str(), "rb");
 
     if (wavFile == nullptr) return;
 
-    if (int bytesRead = fread(&wavHeader, 1, sizeof(WAVHEADER), wavFile))
+    if (size_t bytesRead = fread(&wavHeader, 1, sizeof(WAVHEADER), wavFile))
     {
         if (!checkWav(wavHeader)) {
             fclose(wavFile);
             return;
         }
-        int newSize = wavHeader.chunkSize / 2;
-        size = newSize;
-
-        vector<short> shortBuffer(newSize);
-        size = fread(shortBuffer.data(), sizeof(short), size, wavFile);
-        shortBuffer.resize(size);
+        size = wavHeader.chunkSize / 2 - 200;
+        vector<short> shortBuffer(size);
+        size = static_cast<int>(fread(shortBuffer.data(), sizeof(short), size, wavFile));
 
         buffer.assign(shortBuffer.begin(), shortBuffer.end());
     }
@@ -62,7 +58,7 @@ int WavSound::getSize() const {
 }
 
 void WavSound::addToBuffer(const WavSound& sound, int start) {
-    int count = min(sound.getSize(), size - start) - 200;
+    const int count = min(sound.getSize(), size - start);
     auto src = sound.data();
     auto srcend = std::next(src, count);
     auto dest = std::next(buffer.begin(), start);
@@ -77,12 +73,12 @@ void WavSound::addToBuffer(const WavSound& sound, int start) {
 }
 
 void WavSound::addToBuffer(const WavSound& sound, int start, int duration) {
-    int count = min({ sound.getSize(), size - start, duration }) - 600;
+    const int count = min({ sound.getSize(), size - start, duration });
     auto src = sound.data();
     auto srcend = std::next(src, count);
     auto dest = std::next(buffer.begin(), start);
 
-    int DECAY = min(2000, count);
+    const int DECAY = min(2000, count);
     auto decay_start_src = std::next(src, count - DECAY);
     auto decay_start_dest = std::next(dest, count - DECAY);
 
@@ -100,8 +96,8 @@ void WavSound::addToBuffer(const WavSound& sound, int start, int duration) {
         decay_start_dest,
         decay_start_dest,
         [=, velocity=DECAY] (const int src_val, const int dest_val) mutable {
-            float k = static_cast<float>(velocity) / DECAY;
-            int val = static_cast<int>(src_val * k);
+            const float k = static_cast<float>(velocity) / DECAY;
+            const int val = static_cast<int>(src_val * k);
             velocity--;
             return dest_val + val;
         }
@@ -110,21 +106,21 @@ void WavSound::addToBuffer(const WavSound& sound, int start, int duration) {
 }
 
 void WavSound::master() {
-    float volume = 0.8f;
+    const float volume = 0.8f;
 
     auto [f, s] = std::minmax_element(buffer.begin(), buffer.end());
-    int mn = *f, mx = *s;
+    const int mn = *f, mx = *s;
 
     if (mn == 0 && mx == 0) return;
 
-    float k = SHRT_MAX * volume / std::max(std::abs(mn), std::abs(mx));
+    const float k = SHRT_MAX * volume / std::max(std::abs(mn), std::abs(mx));
 
     wavData = std::vector<short>(buffer.size());
     std::transform(
         buffer.begin(),
         buffer.end(),
         wavData.begin(),
-        [k](int elem) { return static_cast<short>(elem * k); }
+        [=](const int elem) { return static_cast<short>(elem * k); }
     );
 }
 
@@ -160,6 +156,34 @@ wstring WavSound::openFileDialog(HWND hWnd) {
 
     if (GetOpenFileName(&ofn) == TRUE) {
         return ofn.lpstrFile;
+    }
+    return L"";
+}
+
+std::wstring WavSound::saveFileDialog(HWND hWnd) {
+    OPENFILENAME ofn;
+    wchar_t szFile[260] = { 0 };
+
+    ZeroMemory(&ofn, sizeof(ofn));
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner = hWnd;
+    ofn.lpstrFile = szFile;
+    ofn.nMaxFile = sizeof(szFile) / sizeof(szFile[0]);
+    ofn.lpstrFilter = L"Wave Files\0*.wav\0All Files\0*.*\0";
+    ofn.nFilterIndex = 1;
+    ofn.lpstrFileTitle = NULL;
+    ofn.nMaxFileTitle = 0;
+    ofn.lpstrInitialDir = NULL;
+    ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
+
+    if (GetSaveFileName(&ofn) == TRUE) {
+        std::wstring filePath = ofn.lpstrFile;
+
+        if (const size_t length = filePath.length(); 
+            length < 4 || filePath.substr(length - 4) != L".wav") {
+            filePath += L".wav";
+        }
+        return filePath;
     }
     return L"";
 }

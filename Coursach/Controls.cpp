@@ -6,7 +6,7 @@ Button::Button(LPCWSTR caption, int _x, int _y, int w, int h, int _id, HWND pare
     btnwnd = CreateWindowEx(
         0, L"BUTTON", caption,
         WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON | BS_FLAT | flag,
-        x, y, width, height, parent, (HMENU)id,
+        x, y, width, height, parent, reinterpret_cast<HMENU>(id),
         (HINSTANCE)GetWindowLongPtr(parent, GWLP_HINSTANCE), NULL);
 }
 
@@ -70,7 +70,7 @@ int BPMController::getValue() {
     if (buffer[0] == '\0') {
         throw std::invalid_argument("You must choose the tempo");
     }
-    int number = std::stoi(buffer);
+    const int number = std::stoi(buffer);
     if (number < 60 || number > 200) {
         throw std::invalid_argument("BPM must be from 60 to 200");
     }

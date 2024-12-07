@@ -26,6 +26,7 @@ private:
     void OnKeyUp(HWND hwnd, WPARAM wParam, LPARAM lParam);
     void OnLButtonDown(HWND hwnd, WPARAM wParam, LPARAM lParam);
     void OnRButtonDown(HWND hwnd, WPARAM wParam, LPARAM lParam);
+    void master();
 
     HWND hwndMain;
     std::unique_ptr<SoundManager> manager;
@@ -35,6 +36,7 @@ private:
     std::unique_ptr<Button> buttonStop;
     std::unique_ptr<KeyboardPiano> keyboardPiano;
     std::unique_ptr<PianoRoll> pianoRoll;
+    std::unique_ptr<Button> buttonSave;
 };
 
 

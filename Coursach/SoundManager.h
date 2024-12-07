@@ -6,7 +6,7 @@
 #include <array>
 #include "Controls.h"
 #include "wav.h"
-#include "core/inc/fmod.hpp";
+#include "core/inc/fmod.hpp"
 #include "pianoRoll.h"
 
 using FMOD::Sound;
@@ -19,7 +19,8 @@ public:
 
     void play();
     void stop();
-    void master(vector<vector<bool>>& drumData, vector<Note> pianoData);
+    void saveToFile(const wstring& path);
+    void master(const vector<vector<bool>>& drumData, const vector<Note>& pianoData);
     void setBpm(const int _bpm);
     bool isClicked(WPARAM wParam, LPARAM lParam);
     void onClick(HWND hwnd, WPARAM wParam, LPARAM lParam);
@@ -36,10 +37,5 @@ private:
     WavSound masterSound;
     unique_ptr<char> wavData;
     array<array<WavSound, 12>, 4> piano;
-    const array<string, 12> notes = {
-        {"C", "C#", "D", "D#",
-        "E", "F", "F#", "G",
-        "G#", "A", "A#", "B"}
-    };
 };
 

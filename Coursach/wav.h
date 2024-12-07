@@ -1,4 +1,6 @@
-#pragma once
+#ifndef WAVH
+#define WAVH
+
 #define NOMINMAX
 #include <windows.h>
 #include <memory>
@@ -40,6 +42,7 @@ public:
     void saveToFile(const std::wstring& path);
 
     static wstring openFileDialog(HWND hWnd);
+    static wstring saveFileDialog(HWND hWnd);
     static wstring getFileName(const wstring& path);
     static bool fileExists(const wstring& path);
 
@@ -51,3 +54,4 @@ private:
     bool checkWav(const WAVHEADER& header);
     void master();
 };
+#endif

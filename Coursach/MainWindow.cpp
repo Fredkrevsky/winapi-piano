@@ -2,8 +2,9 @@
 #include "Resource.h"
 #include <windowsx.h>
 
-#define BTNSTART 201
-#define BTNSTOP 202
+#define BTN_START 201
+#define BTN_STOP 202
+#define BTN_RENDER 203
 
 MainWindow::MainWindow(HINSTANCE hInstance) {
     WNDCLASSEX wcex = { sizeof(WNDCLASSEX) };
@@ -91,14 +92,16 @@ LRESULT MainWindow::HandleMessage(HWND hwnd, UINT message, WPARAM wParam, LPARAM
 }
 
 void MainWindow::OnCreate(HWND hwnd) {
-    keyboardPiano.reset(new KeyboardPiano());
-    keyboardPiano->start();
     manager.reset(new SoundManager(hwnd, 300, 50));
     bpmController.reset(new BPMController(hwnd, 50, 30));
     channelRack.reset(new ChannelRack(hwnd, 450, 50));
-    buttonStart.reset(Button::createSimple(L"Start", 50, 150, BTNSTART, hwnd));
-    buttonStop.reset(Button::createSimple(L"Stop", 50, 200, BTNSTOP, hwnd));
     pianoRoll.reset(new PianoRoll(hwnd, 300, 250));
+    keyboardPiano.reset(new KeyboardPiano());
+    keyboardPiano->start();
+
+    buttonStart.reset(Button::createSimple(L"Start", 50, 150, BTN_START, hwnd));
+    buttonStop.reset(Button::createSimple(L"Stop", 50, 200, BTN_STOP, hwnd));
+    buttonSave.reset(Button::createSimple(L"Render", 50, 250, BTN_RENDER, hwnd));
 }
 
 void MainWindow::OnKeyDown(HWND hwnd, WPARAM wParam, LPARAM lParam) {
@@ -137,7 +140,7 @@ void MainWindow::OnPaint(HWND hwnd) {
 }
 
 void MainWindow::OnCommand(HWND hwnd, WPARAM wParam, LPARAM lParam) {
-    int wmId = static_cast<int>(wParam);
+    const int wmId{ static_cast<int>(wParam) };
 
     if (channelRack && channelRack->isClicked(wParam, lParam)) {
         channelRack->onClick(hwnd, wParam, lParam);
@@ -157,37 +160,46 @@ void MainWindow::OnCommand(HWND hwnd, WPARAM wParam, LPARAM lParam) {
     else if (wmId == IDM_EXIT) {
         DestroyWindow(hwnd);
     }
-    else if (wmId == BTNSTART) {
-        auto drumData = channelRack->getData();
-        auto pianoData = pianoRoll->getData();
-        int bpm = 100;
-        try {
-            bpm = bpmController->getValue();
-        }
-        catch (std::invalid_argument e){
-            bpmController->setValue(100);
-
-            string text(e.what());
-            wstring wtext(text.begin(), text.end());
-            MessageBox(
-                NULL,
-                wtext.c_str(),
-                (LPCWSTR)L"Error",
-                MB_ICONERROR | MB_OK
-            );
-        }
-        manager->setBpm(bpm);
-        manager->master(drumData, pianoData);
+    else if (wmId == BTN_START) {
+        master();
         manager->play();
         SetFocus(hwnd);
     }
-    else if (wmId == BTNSTOP) {
+    else if (wmId == BTN_STOP) {
         manager->stop();
         SetFocus(hwnd);
+    }
+    else if (wmId == BTN_RENDER) {
+        master();
+        const wstring path = WavSound::saveFileDialog(hwnd);
+        manager->saveToFile(path);
     }
     else if (pianoRoll){
         pianoRoll->OnCommand(hwnd, wParam, lParam);
     }
+}
+
+void MainWindow::master() {
+    const auto drumData = channelRack->getData();
+    const auto pianoData = pianoRoll->getData();
+    int bpm{ 100 };
+    try {
+        bpm = bpmController->getValue();
+    }
+    catch (std::invalid_argument e) {
+        bpmController->setValue(100);
+
+        string text(e.what());
+        wstring wtext(text.begin(), text.end());
+        MessageBox(
+            NULL,
+            wtext.c_str(),
+            (LPCWSTR)L"Error",
+            MB_ICONERROR | MB_OK
+        );
+    }
+    manager->setBpm(bpm);
+    manager->master(drumData, pianoData);
 }
 
 void MainWindow::OnLButtonDown(HWND hwnd, WPARAM wParam, LPARAM lParam) {

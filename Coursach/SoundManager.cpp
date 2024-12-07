@@ -16,6 +16,10 @@ SoundManager::SoundManager(HWND hwnd, int x = 0, int y = 0) {
 
 SoundManager::~SoundManager() { }
 
+void SoundManager::saveToFile(const wstring& path) {
+    masterSound.saveToFile(path);
+}
+
 void SoundManager::createButtons(HWND hwnd, int x, int y) {
     int lastId{ SOUND_MANAGER_START_ID };
     int track{ 0 };
@@ -26,15 +30,23 @@ void SoundManager::createButtons(HWND hwnd, int x, int y) {
 }
 
 void SoundManager::loadDefaultSounds() {
-    for (int t = 0; t < 4; ++t) {
-        for (int i = 0; i < 12; ++i) {
-            string note(notes[i]);
-            wstring path = DEFAULT_PIANO_PATH + wstring(note.begin(), note.end()) + to_wstring(t + 1) + L".wav";
-            piano[t][i].loadFromWav(path.c_str());
-        }
-    }
+    static const array<string, 12> notes = {
+        {"C", "C#", "D", "D#",
+        "E", "F", "F#", "G",
+        "G#", "A", "A#", "B"}
+    };
 
-    const vector<wstring> defaultPaths = {
+    std::ranges::for_each(piano, [&, t=1](auto& row) mutable {
+        std::ranges::for_each(row, [&, t, i=0](auto& elem) mutable {
+            const auto& note = notes[i];
+            const wstring path = DEFAULT_PIANO_PATH + wstring(note.begin(), note.end()) + to_wstring(t) + L".wav";
+            elem.loadFromWav(path.c_str());
+            i++;
+            });
+        t++;
+        });
+
+    static const array<LPCWSTR, 4> defaultPaths = {
         DEFAULT_KICK_PATH,
         DEFAULT_CLAP_PATH,
         DEFAULT_SNARE_PATH,
@@ -43,10 +55,9 @@ void SoundManager::loadDefaultSounds() {
 
     std::ranges::for_each(defaultPaths, [&, i=0](const auto& path) mutable {
         WavSound sound;
-        wstring wpath(path.begin(), path.end());
-        sound.loadFromWav(wpath);
+        sound.loadFromWav(path);
         loadedSamples.emplace_back(std::move(sound));
-        wstring name = WavSound::getFileName(wpath);
+        wstring name = WavSound::getFileName(path);
         sampleButtons[i]->setText(name);
         i++;
     });
@@ -66,7 +77,7 @@ void SoundManager::onClick(HWND hwnd, WPARAM wParam, LPARAM lParam) {
     sampleButtons[index]->setText(name);
 }
 
-void SoundManager::master(vector<vector<bool>>& drumData, vector<Note> pianoData) {
+void SoundManager::master(const vector<vector<bool>>& drumData, const vector<Note>& pianoData) {
 
     int tactSize = rate * 60 * 2 * 4 / bpm;
 
@@ -76,7 +87,7 @@ void SoundManager::master(vector<vector<bool>>& drumData, vector<Note> pianoData
     for (size_t index = 0; index < 4; ++index) {
         auto& sample = loadedSamples[index];
 
-        vector<bool>& vec = drumData[index];
+        const vector<bool>& vec = drumData[index];
         WavSound curr;
         curr.setSize(SIZE);
 
