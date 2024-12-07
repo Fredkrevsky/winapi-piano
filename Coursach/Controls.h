@@ -1,12 +1,7 @@
 #pragma once
 #define NOMINMAX
 #include <windows.h>
-#include <algorithm>
-#include <memory>
-#include <array>
-#include <vector>
 #include <string>
-#include <stdexcept>
 
 #define BTNSTART 2
 #define BTNSTOP 3
@@ -14,7 +9,7 @@
 #define CHANNEL_RACK_END_ID 1999
 #define ID_BPM 101
 
-using namespace std;
+using std::wstring, std::pair;
 
 class Button {
 public:
@@ -44,44 +39,14 @@ private:
 
 class BPMController {
 public:
-    BPMController(HWND parent, int x, int y) {
-        hLabel = CreateWindow(
-            L"STATIC", L"BPM:",
-            WS_VISIBLE | WS_CHILD,
-            x, y, 100, 20,
-            parent, NULL, NULL, NULL
-        );
-        hEdit = CreateWindow(
-            L"EDIT", L"100",
-            WS_VISIBLE | WS_CHILD | WS_BORDER | ES_NUMBER,
-            x, y + 30, 100, 25,
-            parent, (HMENU)ID_BPM, NULL, NULL
-        );
+    BPMController(HWND parent, int x, int y);
 
-        SendMessage(hEdit, EM_SETLIMITTEXT, 3, 0);
-    }
-    static BPMController* create(HWND parent, int x, int y) {
-        return new BPMController(parent, x, y);
-    }
-    int getValue() {
-        wchar_t buffer[16] = {};
-        const size_t bufferSize = sizeof(buffer) / sizeof(buffer[0]);
-        GetWindowText(hEdit, buffer, bufferSize - 1);
+    static BPMController* create(HWND parent, int x, int y);
+    
+    int getValue();
+    
+    void setValue(int value);
 
-        if (buffer[0] == '\0') {
-            throw std::invalid_argument("You must choose the tempo");
-        }
-        int number = stoi(buffer);
-        if (number < 60 || number > 200) {
-            throw std::invalid_argument("BPM must be from 60 to 200");
-        }
-        return number;
-    }
-    void setValue(int value) {
-        wstring data = std::to_wstring(value);
-        data.resize(16);
-        SetWindowText(hEdit, data.c_str());
-    }
 private:
     HWND hLabel, hEdit;
 };

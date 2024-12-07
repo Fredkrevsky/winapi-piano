@@ -1,4 +1,5 @@
 #include "SoundManager.h"
+#include <algorithm>
 
 #define DEFAULT_KICK_PATH L"sounds/kick.wav"
 #define DEFAULT_CLAP_PATH L"sounds/clap.wav"

@@ -1,11 +1,9 @@
-#define _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS
 #include "wav.h"
 #include <fstream>
 #include <algorithm>
 #include <locale>
 #include <codecvt>
-
-using namespace std;
+#include <iterator>
 
 WavSound::WavSound() { }
 
@@ -25,8 +23,7 @@ void WavSound::loadFromWav(const wstring& path) {
     WAVHEADER wavHeader;
     FILE* wavFile;
 
-    wstring_convert<codecvt_utf8<wchar_t>, wchar_t> converter;
-    string pathStr = converter.to_bytes(path);
+    string pathStr(path.begin(), path.end());
 
     fopen_s(&wavFile, pathStr.c_str(), "rb");
 
@@ -67,46 +64,68 @@ int WavSound::getSize() const {
 void WavSound::addToBuffer(const WavSound& sound, int start) {
     int count = min(sound.getSize(), size - start) - 200;
     auto src = sound.data();
+    auto srcend = std::next(src, count);
     auto dest = std::next(buffer.begin(), start);
-    auto destend = std::next(dest, count);
-
-    for (int i = 0; i < count; ++i, ++dest) {
-        *dest += src[i];
-    }
+    
+    std::transform(
+        src, 
+        srcend, 
+        dest, 
+        dest, 
+        std::plus<int>()
+    );
 }
 
 void WavSound::addToBuffer(const WavSound& sound, int start, int duration) {
-    int count = min({ sound.getSize(), size - start, duration}) - 600;
+    int count = min({ sound.getSize(), size - start, duration }) - 600;
     auto src = sound.data();
+    auto srcend = std::next(src, count);
     auto dest = std::next(buffer.begin(), start);
-    auto destend = std::next(dest, count);
 
     int DECAY = min(2000, count);
+    auto decay_start_src = std::next(src, count - DECAY);
+    auto decay_start_dest = std::next(dest, count - DECAY);
 
-    for (int i = 0; i < count - DECAY; ++i, ++dest) {
-        *dest += src[i];
-    }
-    for (int i = count - DECAY; i < count; ++i, ++dest) {
-        int prev = src[i];
-        float k = (count - i) / DECAY;
-        int val = static_cast<int>(prev * k);
-        *dest += val;
-    }
+    std::transform(
+        src,
+        decay_start_src,
+        dest,
+        dest,
+        std::plus<int>()
+    );
+
+    std::transform(
+        decay_start_src,
+        srcend,
+        decay_start_dest,
+        decay_start_dest,
+        [=, velocity=DECAY] (const int src_val, const int dest_val) mutable {
+            float k = static_cast<float>(velocity) / DECAY;
+            int val = static_cast<int>(src_val * k);
+            velocity--;
+            return dest_val + val;
+        }
+    );
+
 }
 
 void WavSound::master() {
     float volume = 0.8f;
 
-    auto [f, s] = minmax_element(buffer.begin(), buffer.end());
+    auto [f, s] = std::minmax_element(buffer.begin(), buffer.end());
     int mn = *f, mx = *s;
 
     if (mn == 0 && mx == 0) return;
-    float k = SHRT_MAX * volume / max(abs(mn), abs(mx));
 
-    wavData.clear();
-    std::transform(buffer.begin(), buffer.end(), back_inserter(wavData), [=](const auto& elem) {
-        return elem * k;
-    });
+    float k = SHRT_MAX * volume / std::max(std::abs(mn), std::abs(mx));
+
+    wavData = std::vector<short>(buffer.size());
+    std::transform(
+        buffer.begin(),
+        buffer.end(),
+        wavData.begin(),
+        [k](int elem) { return static_cast<short>(elem * k); }
+    );
 }
 
 void WavSound::saveToFile(const wstring& filename) {

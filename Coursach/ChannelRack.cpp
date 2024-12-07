@@ -1,86 +1,16 @@
 #include "ChannelRack.h"
 #include <windowsx.h>
 #include <algorithm>
+#include <array>
 
-using std::fill;
-
-//PatternController::Pattern::Pattern()
-//    : buttonStates(4, std::vector<bool>(32, false)) { }
-//
-//void PatternController::Pattern::clear() {
-//    std::ranges::for_each(buttonStates, [](auto& row) {
-//        std::fill(row.begin(), row.end(), false);
-//        });
-//}
-//
-//PatternController::PatternController(HWND hwnd, int x, int y) {
-//    patterns.push_back({ 0, {} });
-//    hComboBox = CreateWindowW(L"COMBOBOX", nullptr,
-//        WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST,
-//        x, y, 100, 200,
-//        hwnd, nullptr, nullptr, nullptr);
-//
-//    const std::array<LPCWSTR, 3> captions = { { L"Pattern 1", L"Add pattern", L"Remove pattern" } };
-//    for (const auto& caption : captions) {
-//        SendMessageW(hComboBox, CB_ADDSTRING, 0, (LPARAM)caption);
-//    }
-//    SendMessageW(hComboBox, CB_SETCURSEL, 0, 0);
-//}
-//
-//PatternController::~PatternController() { }
-//
-//bool PatternController::isClicked(WPARAM wParam, LPARAM lParam) {
-//    return (HWND)lParam == hComboBox && HIWORD(wParam) == CBN_SELCHANGE;
-//}
-//
-//void PatternController::onClick() {
-//    int result = SendMessageW(hComboBox, CB_GETCURSEL, 0, 0);
-//    if (result == size) {
-//        if (size < 6) {
-//            currentPattern = size++;
-//            patterns.push_back({ last++, {} });
-//        }
-//    }
-//    else if (result == size + 1) {
-//        if (size > 1) {
-//            patterns.erase(std::next(patterns.begin(), currentPattern));
-//            size--;
-//        }
-//        else {
-//            patterns.begin()->second.clear();
-//        }
-//        currentPattern = 0;
-//    }
-//    else {
-//        currentPattern = result;
-//    }
-//
-//    SendMessageW(hComboBox, CB_RESETCONTENT, 0, 0);
-//    for (auto it = patterns.begin(); it != patterns.end(); ++it) {
-//        std::wstring caption = L"Pattern " + std::to_wstring(it->first + 1);
-//        SendMessageW(hComboBox, CB_ADDSTRING, 0, (LPARAM)caption.c_str());
-//    }
-//    SendMessageW(hComboBox, CB_ADDSTRING, 0, (LPARAM)L"Add pattern");
-//    SendMessageW(hComboBox, CB_ADDSTRING, 0, (LPARAM)L"Remove pattern");
-//    SendMessageW(hComboBox, CB_SETCURSEL, currentPattern, 0);
-//}
-//
-//void PatternController::setState(std::vector<std::vector<bool>>&& newStatus) {
-//    patterns[currentPattern].second.buttonStates = std::move(newStatus);
-//}
-//
-//std::vector<std::vector<bool>> PatternController::getState() {
-//    return patterns[currentPattern].second.buttonStates;
-//}
-
+using std::fill, std::array;
 
 ChannelRack::ChannelRack(HWND hwnd, int x = 0, int y = 0) :
     numTracks(4),
     numSteps(32),
     posx(x),
     posy(y),
-    buttonStates(numTracks, vector<bool>(numSteps, false))/*,
-    patternController(hwnd, 50, 100)*/ {
+    buttonStates(numTracks, vector<bool>(numSteps, false)) {
     
     createButtons(hwnd);
     

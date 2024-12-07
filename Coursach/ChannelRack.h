@@ -3,31 +3,9 @@
 #include <windows.h>
 #include "Controls.h"
 #include <vector>
+#include <memory>
 
-//class PatternController {
-//    struct Pattern {
-//        Pattern();
-//        std::vector<std::vector<bool>> buttonStates;
-//        void clear();
-//    };
-//
-//public:
-//    PatternController(HWND hwnd, int x, int y);
-//    ~PatternController();
-//
-//    bool isClicked(WPARAM wParam, LPARAM lParam);
-//    void onClick();
-//    void setState(std::vector<std::vector<bool>>&& newStatus);
-//    std::vector<std::vector<bool>> getState();
-//
-//private:
-//    std::vector<std::pair<int, Pattern>> patterns;
-//    int last{ 1 };
-//    int size{ 1 };
-//    int currentPattern{ 0 };
-//    HWND hComboBox;
-//};
-
+using std::vector, std::tuple, std::unique_ptr;
 
 class ChannelRack {
 public:
