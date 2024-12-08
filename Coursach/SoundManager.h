@@ -1,4 +1,6 @@
-#pragma once
+#ifndef SOUND_MANAGER_H
+#define SOUND_MANAGER_H
+
 #define NOMINMAX
 #include <windows.h>
 #include <vector>
@@ -12,7 +14,7 @@
 using FMOD::Sound;
 using std::vector, std::array;
 
-class SoundManager {
+class SoundManager final {
 public:
     SoundManager(HWND hwnd, int x, int y);
     ~SoundManager();
@@ -39,3 +41,4 @@ private:
     array<array<WavSound, 12>, 4> piano;
 };
 
+#endif

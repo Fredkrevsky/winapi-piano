@@ -64,16 +64,16 @@ void SoundManager::loadDefaultSounds() {
 }
 
 bool SoundManager::isClicked(WPARAM wParam, LPARAM lParam) {
-    int id = static_cast<int>(wParam);
+    const int id = static_cast<int>(wParam);
     return id >= SOUND_MANAGER_START_ID && id <= SOUND_MANAGER_END_ID;
 }
 
 void SoundManager::onClick(HWND hwnd, WPARAM wParam, LPARAM lParam) {
-    int index = static_cast<int>(wParam) - SOUND_MANAGER_START_ID;
-    wstring path = WavSound::openFileDialog(hwnd);
+    const int index = static_cast<int>(wParam) - SOUND_MANAGER_START_ID;
+    const wstring path = WavSound::openFileDialog(hwnd);
     loadedSamples[index].loadFromWav(path);
 
-    wstring name = WavSound::getFileName(path);
+    const wstring name = WavSound::getFileName(path);
     sampleButtons[index]->setText(name);
 }
 

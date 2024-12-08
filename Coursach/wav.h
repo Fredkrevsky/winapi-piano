@@ -1,12 +1,10 @@
-#ifndef WAVH
-#define WAVH
+#ifndef WAV_H
+#define WAV_H
 
 #define NOMINMAX
 #include <windows.h>
-#include <memory>
 #include <string>
 #include <vector>
-#include <fstream>
 #include <commdlg.h> 
 
 using namespace std;
@@ -30,7 +28,7 @@ typedef struct _WAVHEADER
     uint32_t        subchunk2Size = 0;
 } WAVHEADER;
 
-class WavSound {
+class WavSound final {
 public:
     WavSound();
     void setSize(int size);
@@ -38,7 +36,7 @@ public:
     void addToBuffer(const WavSound& sound, int start, int duration);
     void loadFromWav(const wstring& path);
     int getSize() const;
-    const int* data() const;
+    constexpr const int* data() const;
     void saveToFile(const std::wstring& path);
 
     static wstring openFileDialog(HWND hWnd);
@@ -47,7 +45,6 @@ public:
     static bool fileExists(const wstring& path);
 
 private:
-    int size{};
     vector<int> buffer{};
     vector<short> wavData{};
 

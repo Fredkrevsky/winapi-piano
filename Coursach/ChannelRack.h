@@ -1,13 +1,18 @@
-#pragma once
+#ifndef CHANNEL_RACK_H
+#define CHANNEL_RACK_H
+
 #define NOMINMAX
 #include <windows.h>
 #include "Controls.h"
 #include <vector>
 #include <memory>
 
+#define CHANNEL_RACK_START_ID 1000
+#define CHANNEL_RACK_END_ID 1999
+
 using std::vector, std::tuple, std::unique_ptr;
 
-class ChannelRack {
+class ChannelRack final {
 public:
     ChannelRack(HWND hwnd, int x, int y);
 
@@ -32,20 +37,19 @@ private:
     
     void createButtons(HWND hwnd);
 
-    int numTracks, numSteps;
-    const int posx;
-    const int posy;
+    const int numTracks{ 4 };
+    const int numSteps{ 32 };
+    const int posx, posy;
+
     vector<vector<bool>> buttonStates;
     HBRUSH lightBrush, pinkBrush, greyBrush, redBrush;
-    HWND hComboBox;
-
-
     vector<vector<unique_ptr<Button>>> buttons;
 
-    int startId{ CHANNEL_RACK_START_ID };
+    const int startId{ CHANNEL_RACK_START_ID };
     int lastId{ CHANNEL_RACK_START_ID };
 
     const int swidth{ 15 };
     const int sheight{ 20 };
 };
 
+#endif

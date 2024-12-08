@@ -17,30 +17,10 @@ PianoRoll::PianoRoll(HWND hwnd, int _x, int _y) : x(_x), y(_y){
     std::ranges::for_each(durationButtons, [=, nameIndex=0, dx=50](auto& button) mutable {
         const LPCWSTR name = btnNames[nameIndex];
         const int btnId = BTN_DURATION + nameIndex;
-        button.reset(Button::createSimple(name, x + dx, y + yPos, btnId, hwnd));
+        button.reset(Button::createSimple(name, x + 130 + dx, y + yPos, btnId, hwnd));
         nameIndex++;
-        dx += 200;
+        dx += 150;
     });
-
-    /*btnWholeNote = CreateWindow(L"BUTTON", L"Whole Note", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-        x + 50, y + yPos, BUTTON_WIDTH, BUTTON_HEIGHT, hwnd, NULL,
-        (HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE), NULL);
-
-    btnHalfNote = CreateWindow(L"BUTTON", L"Half Note", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-        x + 250, y + yPos, BUTTON_WIDTH, BUTTON_HEIGHT, hwnd, NULL,
-        (HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE), NULL);
-
-    btnQuarterNote = CreateWindow(L"BUTTON", L"Quarter Note", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-        x + 450, y + yPos, BUTTON_WIDTH, BUTTON_HEIGHT, hwnd, NULL,
-        (HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE), NULL);
-
-    btnEighthNote = CreateWindow(L"BUTTON", L"Eighth Note", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-        x + 650, y + yPos, BUTTON_WIDTH, BUTTON_HEIGHT, hwnd, NULL,
-        (HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE), NULL);
-
-    btnSixteenthNote = CreateWindow(L"BUTTON", L"Sixteenth Note", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-        x + 850, y + yPos, BUTTON_WIDTH, BUTTON_HEIGHT, hwnd, NULL,
-        (HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE), NULL);*/
 }
 
 vector<Note> PianoRoll::getData() {

@@ -1,10 +1,11 @@
 #include "KeyboardPiano.h"
 #include <algorithm>
 #include <string>
+#include <unordered_map>
 
-using std::lock_guard, std::unique_lock;
+using std::lock_guard, std::unique_lock, std::unordered_map, std::string, std::mutex;
 
-KeyboardPiano::KeyboardPiano() : currentNote{ -1 }, stopThread(false), hasNewNote(false), channels(64) {
+KeyboardPiano::KeyboardPiano() : currentNote{ -1 }, stopThread(false), hasNewNote(false) {
     FMOD::System_Create(&system);
     system->init(512, FMOD_INIT_NORMAL, nullptr);
     loadDefaultSounds();
@@ -13,11 +14,11 @@ KeyboardPiano::KeyboardPiano() : currentNote{ -1 }, stopThread(false), hasNewNot
 
 KeyboardPiano::~KeyboardPiano() {
     stop();
-    for (auto& octave : piano) {
-        for (auto* note : octave) {
+    std::ranges::for_each(piano, [](auto& octave) {
+        std::ranges::for_each(octave, [](auto& note) {
             note->release();
-        }
-    }
+        });
+    });
     system->close();
     system->release();
 }
@@ -32,7 +33,7 @@ void KeyboardPiano::loadDefaultSounds() {
 
     std::ranges::for_each(piano, [&, octave = 3](auto& row) mutable {
         std::ranges::for_each(row, [&, note = 0](auto& elem) mutable {
-            std::string path = "sounds\\piano\\" + notes[note] + std::to_string(octave) + ".wav";
+            string path = "sounds\\piano\\" + notes[note] + std::to_string(octave) + ".wav";
             system->createSound(path.c_str(), FMOD_DEFAULT, nullptr, &elem);
             note++;
             });
@@ -46,7 +47,7 @@ void KeyboardPiano::start() {
 
 void KeyboardPiano::stop() {
     {
-        std::lock_guard<std::mutex> lock(mtx);
+        lock_guard<mutex> lock(mtx);
         stopThread = true;
         cv.notify_one();
     }
@@ -56,7 +57,7 @@ void KeyboardPiano::stop() {
 }
 
 void KeyboardPiano::playNote(int note) {
-    lock_guard<std::mutex> lock(mtx);
+    lock_guard<mutex> lock(mtx);
     currentNote = note;
     hasNewNote = true;
     cv.notify_one();
@@ -86,7 +87,7 @@ void KeyboardPiano::OnKeyDown(WPARAM wParam) {
 }
 
 void KeyboardPiano::OnKeyUp(WPARAM wParam) {
-    int note = static_cast<int>(wParam);
+    const int note = static_cast<int>(wParam);
     activeKeys.erase(note);
 }
 
@@ -100,9 +101,9 @@ void KeyboardPiano::SoundWorker() {
         }
 
         if (currentNote != -1) {
-            int t = currentNote / 12;
-            int i = currentNote % 12;
-            system->playSound(piano[t][i], nullptr, false, &channels[t * 12 + i]);
+            const int t = currentNote / 12;
+            const int i = currentNote % 12;
+            system->playSound(piano[t][i], nullptr, false, nullptr);
             system->update();
         }
 

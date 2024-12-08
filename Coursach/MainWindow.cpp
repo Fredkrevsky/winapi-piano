@@ -174,7 +174,7 @@ void MainWindow::OnCommand(HWND hwnd, WPARAM wParam, LPARAM lParam) {
         const wstring path = WavSound::saveFileDialog(hwnd);
         manager->saveToFile(path);
     }
-    else if (pianoRoll){
+    else if (pianoRoll && pianoRoll->isClicked(hwnd, wParam, lParam)){
         pianoRoll->OnCommand(hwnd, wParam, lParam);
     }
 }

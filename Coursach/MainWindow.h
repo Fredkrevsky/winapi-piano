@@ -1,4 +1,6 @@
-#pragma once
+#ifndef MAIN_WINDOW_H
+#define MAIN_WINDOW_H
+
 #define NOMINMAX
 #include <windows.h>
 #include <memory>
@@ -8,7 +10,7 @@
 #include "KeyboardPiano.h"
 #include "PianoRoll.h"
 
-class MainWindow {
+class MainWindow final {
 public:
     MainWindow(HINSTANCE hInstance);
     ~MainWindow();
@@ -39,4 +41,4 @@ private:
     std::unique_ptr<Button> buttonSave;
 };
 
-
+#endif

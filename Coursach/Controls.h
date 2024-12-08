@@ -1,17 +1,17 @@
-#pragma once
+#ifndef CONTROLS_H
+#define CONTROLS_H
+
 #define NOMINMAX
 #include <windows.h>
 #include <string>
 
 #define BTNSTART 2
 #define BTNSTOP 3
-#define CHANNEL_RACK_START_ID 1000
-#define CHANNEL_RACK_END_ID 1999
 #define ID_BPM 101
 
 using std::wstring, std::pair;
 
-class Button {
+class Button final {
 public:
 
     Button(LPCWSTR caption, int _x, int _y, int w, int h, int _id, HWND parent, DWORD flag);
@@ -26,7 +26,7 @@ public:
 
     int getId() const;
 
-    void setText(wstring& text);
+    void setText(const wstring& text);
 
     pair<int, int> getPos() const;
 
@@ -51,3 +51,4 @@ private:
     HWND hLabel, hEdit;
 };
 
+#endif

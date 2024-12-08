@@ -1,4 +1,6 @@
-#pragma once
+#ifndef PIANO_ROLL_H
+#define PIANO_ROLL_H
+
 #define NOMINMAX
 #include <windows.h>
 #include <vector>
@@ -6,14 +8,14 @@
 #include <memory>
 #include "Controls.h"
 
-using std::vector, std::array;
+using std::vector, std::array, std::unique_ptr;
 
 struct Note {
     int x, y;
     int length;
 };
 
-class PianoRoll {
+class PianoRoll final {
 public:
     PianoRoll(HWND hwnd, int x, int y);
 
@@ -37,7 +39,7 @@ private:
     bool IsBlackKey(int midiNote);
 
     vector<Note> notes;
-    array<std::unique_ptr<Button>, 5> durationButtons;
+    array<unique_ptr<Button>, 5> durationButtons;
     int currentDuration = 4;
 
     const int CELL_WIDTH = 30;
@@ -62,3 +64,5 @@ private:
     const int x;
     const int y;
 };
+
+#endif

@@ -1,14 +1,15 @@
-#pragma once
+#ifndef KEYBOARD_PIANO_H
+#define KEYBOARD_PIANO_H
+
 #include <windows.h>
 #include <vector>
 #include <array>
 #include <mutex>
 #include <unordered_set>
-#include <unordered_map>
 #include "core/inc/fmod.hpp"
 
-using std::vector, std::mutex, std::condition_variable, std::thread, std::unordered_set;
-using std::unordered_map, std::array, std::string;
+using std::vector, std::mutex, std::condition_variable, std::thread;
+using std::array, std::string, std::unordered_set;
 using FMOD::Channel, FMOD::Sound, FMOD::System;
 
 class KeyboardPiano {
@@ -32,13 +33,11 @@ private:
     thread soundThread;
 
     System* system;
-    vector<Channel*> channels;
-    unordered_set<int> channelStatus;
     array<array<Sound*, 12>, 3> piano;
-
     unordered_set<int> activeKeys;
 
     void SoundWorker();
     void loadDefaultSounds();
 };
 
+#endif

@@ -1,8 +1,6 @@
 #include "wav.h"
 #include <fstream>
 #include <algorithm>
-#include <locale>
-#include <codecvt>
 #include <iterator>
 
 WavSound::WavSound() { }
@@ -19,7 +17,6 @@ void WavSound::loadFromWav(const wstring& path) {
     }
     const wstring name = getFileName(path);
 
-    size = 0;
     WAVHEADER wavHeader;
     FILE* wavFile;
 
@@ -34,30 +31,30 @@ void WavSound::loadFromWav(const wstring& path) {
             fclose(wavFile);
             return;
         }
-        size = wavHeader.chunkSize / 2 - 200;
+        int size = wavHeader.chunkSize / 2 - 200;
         vector<short> shortBuffer(size);
         size = static_cast<int>(fread(shortBuffer.data(), sizeof(short), size, wavFile));
-
+        shortBuffer.resize(size);
         buffer.assign(shortBuffer.begin(), shortBuffer.end());
     }
     fclose(wavFile);
 }
 
-const int* WavSound::data() const {
+constexpr const int* WavSound::data() const {
     return buffer.data();
 }
 
-void WavSound::setSize(int _size) {
+void WavSound::setSize(int size) {
     buffer.clear();
-    buffer.resize(_size, 0);
-    size = _size;
+    buffer.resize(size, 0);
 }
 
 int WavSound::getSize() const {
-    return size;
+    return static_cast<int>(buffer.size());
 }
 
 void WavSound::addToBuffer(const WavSound& sound, int start) {
+    const int size = static_cast<int>(buffer.size());
     const int count = min(sound.getSize(), size - start);
     auto src = sound.data();
     auto srcend = std::next(src, count);
@@ -73,6 +70,7 @@ void WavSound::addToBuffer(const WavSound& sound, int start) {
 }
 
 void WavSound::addToBuffer(const WavSound& sound, int start, int duration) {
+    const int size = static_cast<int>(buffer.size());
     const int count = min({ sound.getSize(), size - start, duration });
     auto src = sound.data();
     auto srcend = std::next(src, count);
@@ -129,6 +127,7 @@ void WavSound::saveToFile(const wstring& filename) {
 
     WAVHEADER header;
 
+    const int size = static_cast<int>(buffer.size());
     header.subchunk2Size = size * sizeof(short);
     header.chunkSize = 36 + header.subchunk2Size;
 

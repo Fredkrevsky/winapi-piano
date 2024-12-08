@@ -5,15 +5,17 @@
 
 using std::fill, std::array;
 
-ChannelRack::ChannelRack(HWND hwnd, int x = 0, int y = 0) :
-    numTracks(4),
-    numSteps(32),
-    posx(x),
+ChannelRack::ChannelRack(HWND hwnd, int x, int y)
+    : posx(x),
     posy(y),
     buttonStates(numTracks, vector<bool>(numSteps, false)) {
-    
+
+    buttons.resize(numTracks);
+    std::ranges::for_each(buttons, [&](auto& buttonRow) {
+        buttonRow.resize(numSteps + 4);
+    });
     createButtons(hwnd);
-    
+
     lightBrush = CreateSolidBrush(RGB(200, 206, 226));
     pinkBrush = CreateSolidBrush(RGB(240, 195, 197));
     greyBrush = CreateSolidBrush(RGB(56, 62, 66));
@@ -21,35 +23,30 @@ ChannelRack::ChannelRack(HWND hwnd, int x = 0, int y = 0) :
 }
 
 void ChannelRack::createButtons(HWND hwnd) {
-    constexpr array<const LPCWSTR, 4> names = { L"Kick", L"Clap", L"Snare", L"Hat" };
-    constexpr array<const LPCWSTR, 4> extraNames = { L"All", L"1/2", L"1/4", L"1/8" };
+    constexpr std::array<const LPCWSTR, 4> extraNames = { L"All", L"1/2", L"1/4", L"1/8" };
 
-    for (int track = 0; track < numTracks; ++track) {
-        vector<unique_ptr<Button>> trackButtons;
-
-        for (int step = 0; step < numSteps; ++step) {
-            int x = posx + step * 20;
-            int y = posy + 5 + track * 50;
-
-            unique_ptr<Button> btn{ Button::createSmall(x, y, lastId++, hwnd) };
-            trackButtons.emplace_back(std::move(btn));
-        }
-
-        for (int i = 0, size = extraNames.size(); i < size; ++i) {
-            int x = posx + (numSteps + 2 + 4 * i) * 20;
-            int y = posy + track * 50;
-
-            unique_ptr<Button> extraBtn{ Button::createFreq(extraNames[i], x, y, lastId++, hwnd) };
-            trackButtons.emplace_back(std::move(extraBtn));
-        }
-        buttons.emplace_back(std::move(trackButtons));
-    }
+    std::ranges::for_each(buttons, [&, track = 0](auto& buttonRow) mutable {
+        std::ranges::for_each(buttonRow, [&, step = 0](auto& button) mutable {
+            if (step < numSteps) {
+                const int x = posx + step * 20;
+                const int y = posy + 5 + track * 50;
+                button.reset(Button::createSmall(x, y, lastId++, hwnd));
+            }
+            else {
+                const int x = posx + (step + 3 * (step - numSteps)) * 20 + 40;
+                const int y = posy + track * 50;
+                button.reset(Button::createFreq(extraNames[step - numSteps], x, y, lastId++, hwnd));
+            }
+            ++step;
+            });
+        ++track;
+        });
 }
 
 ChannelRack::~ChannelRack() { }
 
 bool ChannelRack::isClicked(WPARAM wParam, LPARAM lParam) {
-    int id = static_cast<int>(wParam);
+    const int id = static_cast<int>(wParam);
     return id >= CHANNEL_RACK_START_ID && id <= CHANNEL_RACK_END_ID;
 }
 
@@ -59,16 +56,16 @@ void ChannelRack::toggleButton(int track, int step) {
 }
 
 void ChannelRack::onClick(HWND hwnd, WPARAM wParam, LPARAM lParam) {
-    int btnId = static_cast<int>(wParam);
-    auto [row, col] = getRowCol(btnId);
+    const int btnId = static_cast<int>(wParam);
+    const auto [row, col] = getRowCol(btnId);
     if (col < 32) {
         toggleButton(row, col);
     }
     else {
         fillStatus(row, 1 << (col - 32));
     }
-    auto [x, y, w, h] = getCoord(wParam);
-    RECT rect = { x - 10, y - 10, x + w + 10, y + h + 10 };
+    const auto [x, y, w, h] = getCoord(wParam);
+    const RECT rect = { x - 10, y - 10, x + w + 10, y + h + 10 };
     InvalidateRect(hwnd, &rect, TRUE);
 }
 
@@ -87,30 +84,30 @@ void ChannelRack::fillStatus(int row, int freq) {
 }
 
 tuple<int, int, int, int> ChannelRack::getCoord(int btnId) {
-    auto [row, col] = getRowCol(btnId);
+    const auto [row, col] = getRowCol(btnId);
     if (col < 32 && row < 4) {
-        auto elem = buttons[row][col].get();
-        auto [x, y] = elem->getPos();
+        const auto elem = buttons[row][col].get();
+        const auto [x, y] = elem->getPos();
         return { x, y, 15, 20};
     }
     else if (row < 4) {
-        auto elem = buttons[row][0].get();
-        auto [x, y] = elem->getPos();
+        const auto elem = buttons[row][0].get();
+        const auto [x, y] = elem->getPos();
         return { x, y, 635, 20 };
     }
     return {posx, posy, 635, 200};
 }
 
 void ChannelRack::FillButtonColor(WPARAM wParam, LPARAM lParam) {
-    int id = static_cast<int>(wParam);
+    const int id = static_cast<int>(wParam);
     if (id < startId || id > lastId) return;
-    size_t index = (id - CHANNEL_RACK_START_ID);
+    const size_t index = (id - CHANNEL_RACK_START_ID);
 
-    auto [row, col] = getRowCol(id);
+    const auto [row, col] = getRowCol(id);
     if (col >= 32) return;
 
-    bool isSelected = buttonStates[row][col];
-    bool mode = (col % 8 >= 4);
+    const bool isSelected = buttonStates[row][col];
+    const bool mode = (col % 8 >= 4);
 
     HBRUSH brush = nullptr;
     if (isSelected && mode)
@@ -137,8 +134,8 @@ vector<vector<bool>> ChannelRack::getData() {
 }
 
 pair<int, int> ChannelRack::getRowCol(int btnId) {
-    int id = btnId - startId;
-    int track = id / 36;
-    int step = id % 36;
+    const int id = btnId - startId;
+    const int track = id / 36;
+    const int step = id % 36;
     return { track, step };
 }

@@ -28,7 +28,7 @@ int Button::getId() const {
     return id;
 }
 
-void Button::setText(wstring& text) {
+void Button::setText(const wstring& text) {
     SetWindowText(btnwnd, text.c_str());
 }
 
