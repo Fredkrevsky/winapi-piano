@@ -21,7 +21,6 @@ public:
     void stop();
     void OnKeyDown(WPARAM wParam);
     void OnKeyUp(WPARAM wParam);
-    void playNote(int note);
 
 private:
     int currentNote;
@@ -38,6 +37,7 @@ private:
 
     void SoundWorker();
     void loadDefaultSounds();
+    void playNote(int note);
 };
 
 #endif
